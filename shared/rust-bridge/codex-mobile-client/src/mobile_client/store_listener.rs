@@ -5,6 +5,7 @@ const SUBAGENT_METADATA_HYDRATE_DELAYS_MS: [u64; 3] = [150, 800, 2500];
 pub(super) fn spawn_store_listener(
     app_store: Arc<AppStoreReducer>,
     sessions: Arc<RwLock<HashMap<String, Arc<ServerSession>>>>,
+    mobile_preferences_directory: Arc<StdMutex<Option<String>>>,
     mut rx: broadcast::Receiver<UiEvent>,
 ) {
     MobileClient::spawn_detached(async move {
@@ -17,6 +18,7 @@ pub(super) fn spawn_store_listener(
                         continue;
                     }
                     app_store.apply_ui_event(&event);
+                    maybe_persist_thread_mode_from_event(&mobile_preferences_directory, &event);
                     maybe_hydrate_collab_agent_metadata(
                         Arc::clone(&app_store),
                         Arc::clone(&sessions),
@@ -38,6 +40,28 @@ pub(super) fn spawn_store_listener(
             }
         }
     });
+}
+
+fn maybe_persist_thread_mode_from_event(
+    mobile_preferences_directory: &Arc<StdMutex<Option<String>>>,
+    event: &UiEvent,
+) {
+    let UiEvent::ItemCompleted { key, notification } = event else {
+        return;
+    };
+    if !matches!(notification.item, upstream::ThreadItem::Plan { .. }) {
+        return;
+    }
+    let directory = {
+        let guard = mobile_preferences_directory
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        guard.clone()
+    };
+    let Some(directory) = directory else {
+        return;
+    };
+    crate::thread_modes::set_mode(&directory, key, AppModeKind::Plan);
 }
 
 fn maybe_hydrate_collab_agent_metadata(
@@ -290,6 +314,38 @@ pub(super) async fn maybe_send_next_local_queued_follow_up(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tempfile::tempdir;
+
+    #[test]
+    fn item_completed_plan_persists_plan_mode() {
+        let tempdir = tempdir().expect("tempdir");
+        let directory = tempdir.path().to_string_lossy().to_string();
+        let key = ThreadKey {
+            server_id: "srv".to_string(),
+            thread_id: "thread".to_string(),
+        };
+        let event = UiEvent::ItemCompleted {
+            key: key.clone(),
+            notification: upstream::ItemCompletedNotification {
+                item: upstream::ThreadItem::Plan {
+                    id: "plan".to_string(),
+                    text: "plan text".to_string(),
+                },
+                thread_id: key.thread_id.clone(),
+                turn_id: "turn-plan".to_string(),
+            },
+        };
+
+        maybe_persist_thread_mode_from_event(
+            &Arc::new(StdMutex::new(Some(directory.clone()))),
+            &event,
+        );
+
+        assert_eq!(
+            crate::thread_modes::read_mode(&directory, &key),
+            Some(AppModeKind::Plan)
+        );
+    }
 
     #[test]
     fn collab_receiver_thread_ids_extracts_spawn_agent_targets() {

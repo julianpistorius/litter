@@ -220,6 +220,12 @@ impl AppClient {
         };
     }
 
+    /// Register the directory where Rust can persist small local app
+    /// preferences that are not part of the public preferences record.
+    pub fn set_mobile_preferences_directory(&self, directory: String) {
+        self.inner.set_mobile_preferences_directory(directory);
+    }
+
     pub async fn fork_thread(
         &self,
         server_id: String,

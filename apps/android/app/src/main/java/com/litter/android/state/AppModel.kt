@@ -104,6 +104,7 @@ class AppModel private constructor(context: android.content.Context) {
         // The show_widget auto-save hook on the Rust side persists to this
         // directory. Without setting it at launch the hook is a silent no-op.
         client.setSavedAppsDirectory(SavedAppsDirectory.path(context))
+        client.setMobilePreferencesDirectory(MobilePreferencesDirectory.path(context))
         discovery = DiscoveryBridge()
         serverBridge = ServerBridge()
         ssh = SshBridge()

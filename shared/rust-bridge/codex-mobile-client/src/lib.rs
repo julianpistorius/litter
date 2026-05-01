@@ -134,6 +134,7 @@ pub mod ssh_bridge;
 pub mod ssh_detached_launcher;
 pub mod ssh_launcher;
 pub mod store;
+mod thread_modes;
 pub mod transport;
 pub mod types;
 pub mod widget_guidelines;

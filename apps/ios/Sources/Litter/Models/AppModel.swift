@@ -142,6 +142,7 @@ final class AppModel {
         // dynamic-tool finalize hook can auto-upsert on `show_widget` calls.
         // Without this, auto-save silently no-ops.
         self.client.setSavedAppsDirectory(directory: SavedAppsDirectory.path)
+        self.client.setMobilePreferencesDirectory(directory: MobilePreferencesDirectory.path)
     }
 
     deinit {
