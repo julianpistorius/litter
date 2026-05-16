@@ -8,6 +8,7 @@ Cross-platform automation scripts will move here over time.
 - `deploy-android-ondevice.sh`: builds Rust JNI libs, assembles `onDeviceDebug`, installs on a target device (`--serial`/`ANDROID_SERIAL`), and launches the app.
 - `switch-app-identity.sh`: switches local app IDs between `com.sigkitten.litter` and `com.<your-identifier>.litter` for Android+iOS (`--to your-identifier --identifier <name>`), with optional `--team-id` for iOS signing. For iOS it updates `apps/ios/project.yml` and regenerates `apps/ios/Litter.xcodeproj` via `xcodegen` (no direct `.xcodeproj` edits).
 - `triage-mobile-feedback.py`: rerunnable triage ledger for GitHub issues/PRs, TestFlight feedback/crashes, and Google Play reviews/crash issues. It stores raw per-run snapshots, a durable local state file, and a generated board under `artifacts/mobile-triage/`.
+- `web-e2e-real-browser.mjs`: drives the Litter Web PWA through Chromium CDP at `http://localhost:9222`, connects through Alleycat when `LITTER_ALLEYCAT_PAIR_PAYLOAD` is set, opens the first thread, and writes screenshots plus `summary.json` under `artifacts/web-e2e/`.
 
 Mobile triage flow:
 

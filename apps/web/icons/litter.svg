@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Litter">
+  <rect width="128" height="128" rx="24" fill="#000000"/>
+  <path d="M30 28h22v72h46v20H30V28z" fill="#00ff9c"/>
+  <path d="M62 28h36v20H84v52H62V28z" fill="#f4f4f4"/>
+</svg>

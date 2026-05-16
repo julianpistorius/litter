@@ -4,6 +4,7 @@ members = [
     "codex-debug-cli",
     "codex-ipc",
     "codex-mobile-client",
+    "codex-web-client",
     "uniffi-bindgen",
     "codex-tui",
 ]

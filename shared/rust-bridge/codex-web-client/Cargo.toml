@@ -1,0 +1,27 @@
+[package]
+name = "codex-web-client"
+version = "0.1.0"
+edition = "2024"
+description = "WASM-ready web client core for the Litter PWA"
+license = "GPL-3.0-only"
+
+[lib]
+name = "codex_web_client"
+crate-type = ["lib", "cdylib"]
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+wasm-bindgen = "0.2.114"
+
+[target.'cfg(all(target_family = "wasm", target_os = "unknown"))'.dependencies]
+base64 = { workspace = true }
+getrandom = { version = "0.3", features = ["wasm_js"] }
+iroh = { version = "0.98.1", default-features = false, features = ["tls-ring"] }
+sha1 = "0.10"
+tokio = { version = "1", default-features = false, features = ["io-util", "sync"] }
+wasm-bindgen-futures = "0.4.64"
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false

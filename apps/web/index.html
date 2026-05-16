@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <title>Litter</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./icons/litter.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="sidebar" aria-label="Threads">
+        <header class="sidebar-header">
+          <img class="brand-mark" src="./icons/litter.svg" alt="" />
+          <div>
+            <h1>Litter</h1>
+            <p id="connection-status">Disconnected</p>
+          </div>
+        </header>
+
+        <div id="attach-choice" class="attach-choice">
+          <p class="connect-prompt">Pick how you want to connect.</p>
+
+          <button id="choose-alleycat" type="button" class="attach-option">
+            <span class="attach-icon" aria-hidden="true">QR</span>
+            <span class="attach-copy">
+              <span class="attach-title">Pair with kittylitter</span>
+              <span class="attach-badge">Recommended</span>
+              <span class="attach-description">
+                Run npx kittylitter on the host, then paste the pair payload it prints.
+              </span>
+            </span>
+            <span class="attach-chevron" aria-hidden="true">&gt;</span>
+          </button>
+
+          <button id="choose-websocket" type="button" class="attach-option">
+            <span class="attach-icon" aria-hidden="true">WS</span>
+            <span class="attach-copy">
+              <span class="attach-title">Codex WebSocket URL</span>
+              <span class="attach-description">
+                Paste a ws:// or wss:// Codex app server URL from a browser-reachable host.
+              </span>
+            </span>
+            <span class="attach-chevron" aria-hidden="true">&gt;</span>
+          </button>
+        </div>
+
+        <form id="alleycat-form" class="connect-form" hidden novalidate>
+          <div class="form-heading">
+            <button class="back-button" type="button" data-attach-back>Back</button>
+            <h3>Pair with kittylitter</h3>
+          </div>
+          <div class="transport-fields">
+            <label for="alleycat-pair-payload">Alleycat pair payload</label>
+            <textarea
+              id="alleycat-pair-payload"
+              name="alleycat-pair-payload"
+              rows="5"
+              placeholder='{"v":1,"node_id":"...","token":"...","relay":null}'
+            ></textarea>
+            <label for="alleycat-agent">Agent</label>
+            <input id="alleycat-agent" name="alleycat-agent" type="text" value="codex" />
+          </div>
+          <button type="submit">Pair</button>
+        </form>
+
+        <form id="websocket-form" class="connect-form" hidden novalidate>
+          <div class="form-heading">
+            <button class="back-button" type="button" data-attach-back>Back</button>
+            <h3>Codex WebSocket URL</h3>
+          </div>
+          <div class="transport-fields">
+            <label for="server-url">Server WebSocket URL</label>
+            <input
+              id="server-url"
+              name="server-url"
+              type="url"
+              inputmode="url"
+              autocomplete="url"
+              placeholder="ws://127.0.0.1:8390"
+            />
+          </div>
+          <button type="submit">Connect</button>
+        </form>
+
+        <div class="thread-toolbar">
+          <button id="refresh-threads" type="button">Refresh</button>
+        </div>
+        <ol id="thread-list" class="thread-list"></ol>
+      </section>
+
+      <section class="conversation" aria-label="Conversation">
+        <header class="conversation-header">
+          <div>
+            <h2 id="thread-title">No thread selected</h2>
+            <p id="thread-meta">Connect, then choose a thread.</p>
+          </div>
+        </header>
+
+        <div id="error-banner" class="error-banner" hidden></div>
+        <div id="conversation-items" class="conversation-items"></div>
+
+        <form id="composer-form" class="composer" aria-label="Send message">
+          <textarea id="composer-input" rows="3" placeholder="Message Codex"></textarea>
+          <button type="submit">Send</button>
+        </form>
+      </section>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

@@ -41,6 +41,10 @@ ANDROID_DIR := $(ROOT)/apps/android
 ANDROID_JNI := $(ANDROID_DIR)/core/bridge/src/main/jniLibs
 GENERATED_DIR := $(RUST_DIR)/generated
 PATCHES_DIR := $(ROOT)/patches/codex
+WEB_DIR := $(ROOT)/apps/web
+WEB_WASM_PKG := $(WEB_DIR)/pkg
+WASM_CC ?= $(shell command -v clang 2>/dev/null)
+WASM_CC_ENV := $(if $(WASM_CC),CC_wasm32_unknown_unknown='$(WASM_CC)')
 
 IOS_DEPLOYMENT_TARGET ?= 18.0
 IOS_SIM_DEVICE ?= iPhone 17 Pro
@@ -187,6 +191,7 @@ $(shell mkdir -p $(STAMPS))
 .PHONY: all ios ios-sim ios-sim-fast ios-sim-run ios-device ios-device-fast ios-device-run ios-device-stop ios-run verify-ios-project catalyst catalyst-run catalyst-fast catalyst-fast-run mac-direct mac-direct-run mac-direct-fast mac-direct-fast-run \
 	android android-fast android-tools android-emulator-fast android-emulator-run android-device-run android-release android-debug android-install android-emulator-install \
 	rust-ios rust-ios-package rust-ios-device-release rust-mac-release rust-ios-device-fast rust-ios-sim-fast rust-ios-macabi-fast rust-android rust-check rust-test rust-host-dev \
+	web web-wasm web-check web-serve web-e2e-real-browser \
 	alleycat-main \
 	bindings bindings-swift bindings-kotlin \
 	sync patch unpatch xcgen alpine-fs \
@@ -813,6 +818,47 @@ tui:
 tui-run:
 	@echo "── Running codex-tui ──"
 	cd shared/rust-bridge && cargo run -p codex-tui --release
+
+web-check:
+	@echo "==> Checking web Rust core..."
+	@cd $(RUST_DIR) && $(DEV_CARGO_ENV) cargo test -p codex-web-client
+	@if [ -z "$(WASM_CC)" ]; then echo "clang is required for iroh/ring wasm builds; install clang or set WASM_CC=/path/to/clang"; exit 1; fi
+	@cd $(RUST_DIR) && $(DEV_CARGO_ENV) $(WASM_CC_ENV) cargo check -p codex-web-client --target wasm32-unknown-unknown
+
+web-wasm:
+	@command -v wasm-pack >/dev/null || { echo "wasm-pack is required. Install with: cargo install wasm-pack"; exit 1; }
+	@if [ -z "$(WASM_CC)" ]; then echo "clang is required for iroh/ring wasm builds; install clang or set WASM_CC=/path/to/clang"; exit 1; fi
+	@echo "==> Building Litter web WASM package..."
+	@cd $(RUST_DIR)/codex-web-client && $(WASM_CC_ENV) wasm-pack build --target web --out-dir $(WEB_WASM_PKG) --release
+	@! rg -q 'from "env"' "$(WEB_WASM_PKG)/codex_web_client.js" || { echo "generated WASM package contains unresolved env imports; check WASM_CC points to a wasm-capable clang"; exit 1; }
+
+web: web-wasm
+	@echo "==> Litter web app built in $(WEB_DIR)"
+
+web-serve: web
+	@echo "==> Serving Litter web app at http://127.0.0.1:8080"
+	@cd $(WEB_DIR) && python3 -m http.server 8080
+
+web-e2e-real-browser: web
+	@set -e; \
+	node_bin="$$(command -v node || true)"; \
+	if [ -z "$$node_bin" ] && [ -x "$(HOME)/.nvm/versions/node/v26.0.0/bin/node" ]; then node_bin="$(HOME)/.nvm/versions/node/v26.0.0/bin/node"; fi; \
+	if [ -z "$$node_bin" ]; then echo "node is required"; exit 1; fi; \
+	server_pid=""; \
+	cleanup() { if [ -n "$$server_pid" ]; then kill "$$server_pid" >/dev/null 2>&1 || true; fi; }; \
+	trap cleanup EXIT; \
+	if curl -fsS http://127.0.0.1:8080/ >/dev/null 2>&1; then \
+		echo "==> Reusing existing web server at http://127.0.0.1:8080"; \
+	else \
+		echo "==> Starting temporary web server at http://127.0.0.1:8080"; \
+		cd $(WEB_DIR) && python3 -m http.server 8080 >/tmp/litter-web-e2e-server.log 2>&1 & server_pid="$$!"; \
+		cd $(ROOT); \
+	fi; \
+	for attempt in $$(seq 1 50); do curl -fsS http://127.0.0.1:8080/ >/dev/null 2>&1 && break; sleep 0.1; done; \
+	for path in / /pkg/codex_web_client.js /pkg/codex_web_client_bg.wasm; do \
+		curl -fsS "http://127.0.0.1:8080$$path" >/dev/null || { echo "missing web asset: $$path"; exit 1; }; \
+	done; \
+	"$$node_bin" $(ROOT)/tools/scripts/web-e2e-real-browser.mjs
 
 export-fixture:
 	@echo "── Building export-fixture ──"
